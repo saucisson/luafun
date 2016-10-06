@@ -94,23 +94,23 @@ local map_gen = function(tab, key)
     return key, key, value
 end
 
-local rawiter = function(obj, param, state)
+local rawiter = function(obj, param, state, what)
     assert(obj ~= nil, "invalid iterator")
     if type(obj) == "table" then
         local mt = getmetatable(obj);
         if mt ~= nil then
             if mt == iterator_mt then
                 return obj.gen, obj.param, obj.state
-            elseif mt.__ipairs ~= nil then
+            elseif what ~= "map" and mt.__ipairs ~= nil then
                 return mt.__ipairs(obj)
-            elseif mt.__pairs ~= nil then
+            elseif what ~= "table" and mt.__pairs ~= nil then
                 return mt.__pairs(obj)
             end
         end
-        if #obj > 0 then
+        if what ~= "map" and #obj > 0 then
             -- array
             return ipairs(obj)
-        else
+        elseif what ~= "table" then
             -- hash
             return map_gen, obj, nil
         end
@@ -130,6 +130,14 @@ local iter = function(obj, param, state)
     return wrap(rawiter(obj, param, state))
 end
 exports.iter = iter
+local fromtable = function(obj, param, state)
+  return wrap(rawiter(obj, param, state, "table"))
+end
+exports.fromtable = fromtable
+local frommap = function(obj, param, state)
+  return wrap(rawiter(obj, param, state, "map"))
+end
+exports.frommap = frommap
 
 local method0 = function(fun)
     return function(self)
