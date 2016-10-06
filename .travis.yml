@@ -3,8 +3,6 @@ language: python
 services:
   - docker
 
-cache: ccache
-
 env:
     matrix:
       - OS=centos DIST=7
@@ -13,5 +11,26 @@ env:
       - OS=ubuntu DIST=xenial
       - OS=ubuntu DIST=yakkety
       - OS=debian DIST=stretch
+      - TASK=test
 
-script: curl -L http://packpack.github.io/travis.sh | sh
+deploy:
+  provider: packagecloud
+  repository: master
+  username: rtsisyk
+  token: ${PACKAGECLOUD_TOKEN}
+  dist: ${OS}/${DIST}
+  package_glob: packpack/root/${OS}/${DIST}/results/*.{deb,rpm}
+  skip_cleanup: true
+  on:
+    branch: master
+    condition: -n ${OS}
+
+cache: ccache
+
+script:
+ - echo ${OS} ${DIST} ${TASK}
+
+before_deploy:
+ - git clone https://github.com/packpack/packpack.git packpack
+ - pip install -r packpack/requirements.txt
+ - python ./packpack/packpack
